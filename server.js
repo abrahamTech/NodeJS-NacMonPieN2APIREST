@@ -1,27 +1,19 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
+
+const connectDB = require('./db');
+const Material = require('./models/materialModel');
 
 const app = express();
+
+connectDB();
 
 // Configuración del secreto para el token
 const SECRET_KEY = 'secreto_para_token';
 
-// Datos de los materiales
-const materiales = {
-  '001': { nombre: 'Oro puro 24k', precioGramo: 1500.00 },
-  '002': { nombre: 'Oro alto 18k', precioGramo: 1000.00 },
-  '003': { nombre: 'Oro medio 14k', precioGramo: 800.00 },
-  '004': { nombre: 'Oro bajo 10k', precioGramo: 500.00 },
-  '005': { nombre: 'Plata ley .925', precioGramo: 300.00 },
-  '006': { nombre: 'Titanio', precioGramo: 200.00 },
-  '007': { nombre: 'Rodio', precioGramo: 100.00 },
-};
-
-// Usuario y contraseña hardcoded para propósitos de ejemplo
-const usuarioEjemplo = {
-    username: 'usuarioPrueba',
-    password: '123456',
-  };
+// Lista de usuarios registrados
+const usuariosRegistrados = [];
 
 //Settings
 app.set('port', 3000);
@@ -33,6 +25,29 @@ app.get('/prestamo', (req, res) => {
     res.send("Obteniendo el monto del Prestamo:")
 })
 
+// Ruta de registro de usuarios
+app.post('/register', (req, res) => {
+    const { username, password } = req.body;
+  
+    // Verificar si el usuario ya existe
+    const existingUser = usuariosRegistrados.find(user => user.username === username);
+  
+    if (existingUser) {
+      return res.status(400).json({ error: 'El nombre de usuario ya está en uso' });
+    }
+  
+    // Agregar el nuevo usuario a la lista
+    const user = { username, password };
+
+    usuariosRegistrados.push(user);
+
+    res.json({ mensaje: 'Usuario registrado exitosamente'});
+});
+
+app.get('/usuarios', (req, res) => {
+    res.json({ usuarios: usuariosRegistrados });
+});
+
 // Middleware para la autenticación con token
 const authenticateToken = (req, res, next) => {
     const token = req.header('Authorization');
@@ -43,37 +58,48 @@ const authenticateToken = (req, res, next) => {
       req.user = user;
       next();
     }); 
-  };
+};
   
-  // Ruta para autenticar y obtener un token
-  app.post('/auth', (req, res) => {
+// Ruta para autenticar y obtener un token
+app.post('/auth', (req, res) => {
     const { username, password } = req.body;
     
     // Verificar las credenciales del usuario
-    if (username === usuarioEjemplo.username && password === usuarioEjemplo.password) {
-        // Generar y devolver un token
-        const user = { username: usuarioEjemplo.username };
-        const token = jwt.sign(user, SECRET_KEY);
-        res.json({ token });
-    } else {
-        res.status(401).json({ error: 'Credenciales incorrectas' });
+    const usuario = usuariosRegistrados.find(user => user.username === username && user.password === password);
+
+    if (!usuario) {
+        return res.status(401).json({ error: 'Credenciales incorrectas' });
     }
 
-  });
+    // Generar y devolver un token
+    const token = jwt.sign({username}, SECRET_KEY);
+    res.json({ token });
+
+});
   
-  // Ruta protegida con autenticación
-  app.post('/calcprestamo', authenticateToken, (req, res) => {
-    const { id, gramos } = req.body;
-    const material = materiales[id];
-  
-    if (!material) {
-      return res.status(400).json({ error: 'Material no válido' });
-    }
-  
-    const montoPrestamo = (gramos * material.precioGramo) * 0.8;
-  
-    res.json({ montoPrestamo });
-  });
+// Ruta protegida con autenticación
+app.post('/calcprestamo', authenticateToken, async (req, res) => {
+
+    const { codigo, gramos } = req.body;
+
+    try {
+        // Consultar la base de datos para obtener el material según el código
+        const material = await Material.findOne({ codigo });
+    
+        if (!material) {
+          return res.status(400).json({ error: 'Material no válido' });
+        }
+    
+        // Calcular el monto del préstamo
+        const montoPrestamo = (gramos * material.precioGramo) * 0.8;
+    
+        res.json({ montoPrestamo });
+      } catch (error) {
+        console.error('Error al obtener material desde MongoDB:', error.message);
+        res.status(500).json({ error: 'Error interno del servidor' });
+      }
+
+});
 
 app.listen(app.get('port'), () => {
     console.log(`Server listen on port ${app.get("port")}`)

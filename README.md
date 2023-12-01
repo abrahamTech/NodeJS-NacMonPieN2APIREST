@@ -24,8 +24,8 @@ Ejemplo de cómo debería ser el JSON para el método POST de la ruta `/calcpres
 
 ```bash
 {
-  "id": "001",
-  "gramos": "50"
+    "codigo": "001",
+    "gramos": "50"
 }
 ```
 
@@ -37,5 +37,5 @@ En este JSON debe ser incluido en el cuerpo de la solicitud POST a la ruta `/cal
 
 ```bash
 Authorization: 
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InVzdWFyaW9QcnVlYmEiLCJpYXQiOjE3MDE0MDA0Mjl9.i27QKtvEPW7CM66MjkT2p25mmb9jODHAwBw-3PB13Jw
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6InVzdWFyaW9QcnVlYmEiLCJpYXQiOjE3MDE0MDc1Mzd9.rGYYA3xvm1ZEvTzDffoo0xxIhRE5qMwiRacTOnMGXJQ
 ```
