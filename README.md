@@ -25,7 +25,7 @@ Ejemplo de cómo debería ser el JSON para el método POST de la ruta `/calcpres
 ```bash
 {
     "codigo": "001",
-    "gramos": "50"
+    "gramos": 50
 }
 ```
 

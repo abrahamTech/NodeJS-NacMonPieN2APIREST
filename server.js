@@ -5,6 +5,8 @@ const mongoose = require('mongoose');
 const connectDB = require('./db');
 const Material = require('./models/materialModel');
 
+const { swaggerDocs: V1SwaggerDocs } = require('./swagger');
+
 const app = express();
 
 connectDB();
@@ -25,7 +27,7 @@ app.get('/prestamo', (req, res) => {
     res.send("Obteniendo el monto del Prestamo:")
 })
 
-// Ruta de registro de usuarios
+// Ruta /register de registro de usuarios
 app.post('/register', (req, res) => {
     const { username, password } = req.body;
   
@@ -44,23 +46,23 @@ app.post('/register', (req, res) => {
     res.json({ mensaje: 'Usuario registrado exitosamente'});
 });
 
-app.get('/usuarios', (req, res) => {
-    res.json({ usuarios: usuariosRegistrados });
-});
-
 // Middleware para la autenticación con token
 const authenticateToken = (req, res, next) => {
     const token = req.header('Authorization');
-    if (!token) return res.sendStatus(401);
+    if (!token) {
+      return res.sendStatus(401);
+    }
   
     jwt.verify(token, SECRET_KEY, (err, user) => {
-      if (err) return res.sendStatus(403);
+      if (err) {
+        return res.sendStatus(403);
+      }
       req.user = user;
       next();
     }); 
 };
   
-// Ruta para autenticar y obtener un token
+// Ruta /auth para autenticar y obtener un token
 app.post('/auth', (req, res) => {
     const { username, password } = req.body;
     
@@ -77,7 +79,7 @@ app.post('/auth', (req, res) => {
 
 });
   
-// Ruta protegida con autenticación
+// Ruta /calcprestamo protegida con autenticación
 app.post('/calcprestamo', authenticateToken, async (req, res) => {
 
     const { codigo, gramos } = req.body;
@@ -103,4 +105,7 @@ app.post('/calcprestamo', authenticateToken, async (req, res) => {
 
 app.listen(app.get('port'), () => {
     console.log(`Server listen on port ${app.get("port")}`)
+
+    //Documentación
+    V1SwaggerDocs(app, app.get('port'));
 })
